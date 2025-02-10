@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Система расписаний{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 flex flex-col min-h-screen">
+    <header class="bg-blue-500 shadow-md fixed top-0 left-0 w-full z-10">
+        <nav class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                {% if user.superuser %}
+                <a href="{% url 'group_selection' %}" class="text-white font-semibold text-lg hover:text-blue-200">Группы</a>
+                <a href="{% url 'schedule_teacher_new' %}" class="text-white font-semibold text-lg hover:text-blue-200">Расписание преподавателей</a>
+                <a href="{% url 'limitation' %}" class="text-white font-semibold text-lg hover:text-blue-200">Ограничения</a>
+            {% endif %}
+            {% if user.user_type == 'prep' %}
+            <a href="{% url 'rasp_teacher' %}?entity_id={{ user.teacher_id }}"
+                           class="text-white font-semibold text-lg hover:text-blue-200">Моё расписание</a>
+            {% endif %}
+            </div>
+            {% if user.is_authenticated %}
+            <div class="flex items-center space-x-4">
+                <span class="text-white">{{ user.short_name }}</span>
+                <a href="{% url 'identity.logout' %}" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Выйти</a>
+            </div>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="max-w-full mx-auto px-4 py-6 mt-20 flex-1 sm:px-6 lg:px-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="bg-blue-500 text-white text-center py-4 mt-auto">
+        <p>© 2024 Система расписаний</p>
+    </footer>
+</body>
+</html>

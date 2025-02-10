@@ -1,0 +1,64 @@
+{% extends 'edu_resources/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Ограничения{% endblock %}
+
+{% block content %}
+<form method="get" action="{% url 'limitation' %}">
+    <select name="entity_id" class="border rounded-md p-2">
+        {% for entity in entities %}
+        <option value="{{ entity.id }}"
+                {% if entity.id|stringformat:"s" == entity_id %}selected{% endif %}>
+            {{ entity.name }} </option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="bg-blue-500 text-white rounded-md py-2 px-4 hover:bg-blue-600 transition duration-200">Показать ограничения</button>
+</form>
+
+<table class="table-auto border-collapse border border-gray-300 mt-6 w-full">
+    <thead>
+        <tr>
+            <th class="px-4 py-2 border border-gray-300">Время</th>
+            {% for day in days %}
+                <th class="px-4 py-2 border border-gray-300">{{ day|capfirst }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for time_slot in time_slots %}
+            <tr>
+                <td class="px-4 py-2 border border-gray-300">{{ time_slot }}</td>
+                {% for day in days %}
+                    <td class="px-4 py-2 border border-gray-300 text-center">
+                        {% if not timetable|get_item:time_slot|get_item:day %}
+                            {% if entity_id %}
+                            <form method="POST" action="{% url 'limitation' %}" class="flex justify-center">
+                                {% csrf_token %}
+                                <input type="hidden" name="teacher_id" value="{{ entity_id }}">
+                                <input type="hidden" name="day" value="{{ day }}">
+                                <input type="hidden" name="time_slot" value="{{ time_slot }}">
+                                <button name="action" value="append"
+                                        class="w-8 h-8 border-2 border-gray-500 rounded-md bg-transparent hover:bg-gray-100 flex items-center justify-center">
+                                    <span class="text-transparent hover:text-gray-500 text-xl">&#10006;</span> <!-- Крестик появляется при наведении -->
+                                </button>
+                            </form>
+                            {% endif %}
+                        {% endif %}
+                        {% for limit in timetable|get_item:time_slot|get_item:day %}
+                            <form method="POST" action="{% url 'limitation' %}" class="flex justify-center">
+                                {% csrf_token %}
+                                <input type="hidden" name="limitation_id" value="{{ limit.id }}">
+                                <input type="hidden" name="teacher_id" value="{{ limit.teacher }}">
+                                <button name="action" value="delete"
+                                        class="w-8 h-8 border-2 border-gray-700 rounded-md bg-transparent flex items-center justify-center">
+                                    <span class="text-gray-700 text-xl">&#10006;</span> <!-- Темный крестик для снятия -->
+                                </button>
+                            </form>
+                        {% endfor %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

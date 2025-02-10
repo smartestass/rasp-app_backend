@@ -1,0 +1,58 @@
+{% extends 'edu_resources/base.html' %}
+
+{% block title %}Выбор группы{% endblock %}
+
+{% block content %}
+<h1 class="text-xl font-bold mb-6">Выберите группу для создания расписания</h1>
+
+    <div class="w-full mb-4">
+    <form method="get" action="{% url 'group_selection' %}" class="flex space-x-2 items-center">
+        <select name="form" id="form_id" class="p-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 text-sm">
+            {% for form in forms %}
+                <option value="{{ form }}"
+                    {% if form == request.GET.form %}selected{% endif %}>
+                    {{ form }}
+                </option>
+            {% endfor %}
+        </select>
+        <select name="course" id="course_id" class="p-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 text-sm">
+            {% for course in courses %}
+                <option value="{{ course }}"
+                    {% if course|stringformat:"s" == request.GET.course %}selected{% endif %}>
+                    {{ course }}
+                </option>
+            {% endfor %}
+        </select>
+        <select name="naprav" id="naprav_id" class="p-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 text-sm">
+            {% for naprav in napravs %}
+                <option value="{{ naprav }}"
+                    {% if naprav == request.GET.naprav %}selected{% endif %}>
+                    {{ naprav }}
+                </option>
+            {% endfor %}
+        </select>
+        <button name="action" value="submit" class="p-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:ring focus:ring-blue-200 text-sm">OK</button>
+    </form>
+</div>
+
+<table class="table-auto border-collapse border border-gray-300 w-full text-sm">
+    <thead>
+        <tr>
+            <th class="border border-gray-300 px-4 py-2 text-left">Группа</th>
+            <th class="border border-gray-300 px-4 py-2 text-left">Дисциплины</th>
+            <th class="border border-gray-300 px-4 py-2 text-center">Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for group in groups %}
+        <tr class="hover:bg-gray-100">
+            <td class="border border-gray-300 px-4 py-2">{{ group.name }}</td>
+            <td class="border border-gray-300 px-4 py-2">{{ group.count_of_disciplines }}</td>
+            <td class="border border-gray-300 px-4 py-2 text-center">
+                <a href="{% url 'edit_real_schedule' group.id %}" class="text-blue-500 hover:text-blue-700">Создать расписание</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

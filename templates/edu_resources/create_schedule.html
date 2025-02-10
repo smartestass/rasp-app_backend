@@ -1,0 +1,82 @@
+{% extends 'edu_resources/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Создание расписания{% endblock %}
+
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Создание расписания для группы {{ group_name }}</h1>
+
+<div class="flex items-start gap-4">
+    <div class="w-1/6">
+        <form method="get" action="{% url 'create_schedule' group_id %}" class="space-y-2">
+            <select name="discipline_id" id="discipline_id" class="p-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 w-full text-sm">
+                {% for discipline in disciplines %}
+                    <option value="{{ discipline.id }}"
+                        {% if discipline.id|stringformat:"s" == request.GET.discipline_id %}selected{% endif %}>
+                        {{ discipline.discipline_name }} ({{ discipline.discipline_type }}),
+                        {{ discipline.teacher_name }}, {{ discipline.hours }} ч.
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="p-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:ring focus:ring-blue-200 w-full text-sm">OK</button>
+        </form>
+    </div>
+    <div class="w-5/6">
+        <table class="table-auto border-collapse border border-gray-300 w-full text-xs" style="table-layout: fixed;">
+            <thead>
+                <tr>
+                    <th class="border border-gray-300 px-3 py-2">Время</th>
+                    {% for day in days %}
+                        <th class="border border-gray-300 px-3 py-2">{{ day|capfirst }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for time_slot in time_slots %}
+                    <tr>
+                        <td class="border border-gray-300 px-3 py-2">{{ time_slot }}</td>
+                        {% for day in days %}
+                            <td class="border border-gray-300 px-3 py-2 h-20 relative">
+                            {% if not timetable|get_item:time_slot|get_item:day %}
+                                {% if discipline_id %}
+                                     <form method="POST" action="{% url 'create_schedule' group_id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="discipline_id" value="{{ discipline_id }}">
+                                        <input type="hidden" name="day" value="{{ day }}">
+                                        <input type="hidden" name="time_slot" value="{{ time_slot }}">
+                                        <button name="action" value="submit" class="w-6 h-6 bg-white border border-gray-300 hover:bg-green-100">
+                                            <span class="text-green-600 font-bold">+</span>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                                {% for lesson in timetable|get_item:time_slot|get_item:day %}
+                                    <div class="text-xs">
+                                        <strong>{{ lesson.discipline_name }}</strong><br>
+                                        {{ lesson.discipline_type }}<br>
+                                        {{ lesson.teacher }}<br>
+                                        {% if lesson.group_id != group_id %}
+                                            <a href="{% url 'create_schedule' lesson.group_id %}" class="text-blue-500 underline">{{ lesson.group_name }}</a>
+                                        {% else %}
+                                        <form method="POST" action="{% url 'create_schedule' group_id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="lesson_id" value="{{ lesson.id }}">
+                                            <button type="submit" name="action" value="delete" class="w-6 h-6 bg-white border border-gray-300">
+                                                <span class="text-red-600 font-bold">✖</span>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% for limit in timetable_limitations|get_item:time_slot|get_item:day %}
+                                <span class="text-red-600 font-bold absolute top-0 right-0" title="Преподаватель ограничил это время">⛔</span>
+                                {% endfor %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

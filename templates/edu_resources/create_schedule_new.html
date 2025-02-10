@@ -1,0 +1,201 @@
+{% extends 'edu_resources/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Создание расписания{% endblock %}
+
+{% block content %}
+<h1 class="text-xm font-bold mb-4">Создание расписания для группы {{ group_name }}</h1>
+    <h1 class="text-xs font-bold mb-4">Неделя {{ week_number }} из 20
+
+
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li class="text-xs alert alert-{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+        {% if page_obj.has_next %}
+        <form method="POST" action="{% url 'edit_real_schedule' group_id %}">
+                                        {% csrf_token %}
+                                         <input type="hidden" name="page" value="{{ request.GET.page|default:'1' }}">
+                                        <input type="hidden" name="discipline_id" value="{{ discipline_id }}">
+                                         <input type="hidden" name="week" value="{{ week_id }}">
+                                        <button name="action" value="copy" class="mt-2 mb-2">
+                                            <span class="mt-1 p-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:ring focus:ring-blue-200 w-full text-xs">Копировать расписание на след. неделю</span>
+                                        </button>
+                                    </form>
+    {% endif %}
+    <p class="text-xs space-x-2 mt-1">Связанные группы</p>
+{% if related_groups %}
+    <div class="text-xs space-x-2">
+        {% for group in related_groups %}
+{#            {% if group.id != group_id %}#}
+            <a href="{% url 'edit_real_schedule' group.id %}" class="text-blue-500 underline hover:text-blue-700">
+                {{ group.name }}
+            </a>
+{#            {% endif %}#}
+        {% endfor %}
+    </div>
+{% endif %}
+
+    </h1>
+   <div class="flex items-center gap-4">
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&discipline_id={{ request.GET.discipline_id }}"
+           class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 text-xs">
+            &#8592; <!-- Стрелка влево -->
+        </a>
+    {% endif %}
+
+    <a href="?page={{ page_obj.next_page_number }}&discipline_id={{ request.GET.discipline_id }}"
+       class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 text-xs">
+        &#8594; <!-- Стрелка вправо -->
+    </a>
+</div>
+
+
+<div class="flex items-start gap-4">
+{#    <div class="w-1/6">#}
+{#        <form method="get" action="{% url 'edit_real_schedule' group_id %}" class="space-y-2">#}
+{#        <input type="hidden" name="page" value="{{ request.GET.page|default:'1' }}">#}
+{#            <select name="discipline_id" id="discipline_id" class="p-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 w-full text-sm">#}
+{#                {% for discipline in disciplines_solo %}#}
+{#                    <option value="{{ discipline.id }}"#}
+{#                        {% if discipline.id|stringformat:"s" == request.GET.discipline_id %}selected{% endif %}>#}
+{#                        {{ discipline.name }} ({{ discipline.type }}),#}
+{#                        {{ discipline.teacher_name }}, {{ discipline.hours }} ч.#}
+{#                    </option>#}
+{#                {% endfor %}#}
+{#            </select>#}
+{#            <button type="submit" class="p-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:ring focus:ring-blue-200 w-full text-sm">OK</button>#}
+{#        </form>#}
+{#    </div>#}
+<div class="w-1/6 h-96 overflow-y-auto">
+    <form method="get" action="{% url 'edit_real_schedule' group_id %}" class="space-y-2">
+        <input type="hidden" name="page" value="{{ request.GET.page|default:'1' }}">
+    {% if disciplines_with_others %}
+        Потоковые
+    {% for discipline in disciplines_with_others %}
+            <button type="submit"
+                    name="discipline_id"
+                    value="{{ discipline.id }}"
+                    class="p-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 w-full text-xs text-left
+{% if discipline_id == discipline.id %} bg-blue-200 {% endif %} ">
+                {{ discipline.type }} {{ discipline.name }} <br>
+                {% for name in discipline.teacher_names %}
+                    {{ name }} <br>
+                {% endfor %}
+                {{ discipline.lessons_in_schedule }} / {{ discipline.count_of_lessons }} <br>
+                {% for name in discipline.group_names %}
+                    {{ name }} <br>
+                {% endfor %}
+            </button>
+        {% endfor %}
+    {% endif %}
+    {% if disciplines_solo %}
+        Только у этой группы
+        {% for discipline in disciplines_solo %}
+            <button type="submit"
+                    name="discipline_id"
+                    value="{{ discipline.id }}"
+                    class="p-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 w-full text-xs text-left
+{% if discipline_id == discipline.id %} bg-blue-200 {% endif %} ">
+                {{ discipline.type }} {{ discipline.name }} <br>
+                {% for name in discipline.teacher_names %}
+                    {{ name }} <br>
+                {% endfor %}
+                {{ discipline.lessons_in_schedule }} / {{ discipline.count_of_lessons }}
+            </button>
+        {% endfor %}
+    {% endif %}
+    </form>
+</div>
+    <div class="w-5/6">
+        <table class="table-auto border-collapse border border-gray-300 w-full text-xs" style="table-layout: fixed;">
+            <thead>
+                <tr>
+                    <th class="border border-gray-300 px-3 py-2">Время</th>
+                    {% for day in days %}
+                        <th class="border border-gray-300 px-3 py-2">{{ day|capfirst }}<br>{{ dates|get_item:day }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for time_slot in time_slots %}
+                    <tr>
+                        <td class="border border-gray-300 px-3 py-2">{{ time_slot }}</td>
+                        {% for day in days %}
+                            <td class="border border-gray-300 px-3 py-2 h-20 relative">
+                            {% if not timetable|get_item:time_slot|get_item:day %}
+                                {% if discipline_id %}
+                                     <form method="POST" action="{% url 'edit_real_schedule' group_id %}">
+                                        {% csrf_token %}
+                                         <input type="hidden" name="page" value="{{ request.GET.page|default:'1' }}">
+                                        <input type="hidden" name="discipline_id" value="{{ discipline_id }}">
+                                        <input type="hidden" name="day" value="{{ day }}">
+                                        <input type="hidden" name="time_slot" value="{{ time_slot }}">
+                                         <input type="hidden" name="date" value="{{ dates|get_item:day }}">
+                                         <input type="hidden" name="week" value="{{ week_id }}">
+                                        <button name="action" value="submit" class="w-6 h-6 bg-white border border-gray-300 hover:bg-green-100">
+                                            <span class="text-green-600 font-bold">+</span>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                                {% for lesson in timetable|get_item:time_slot|get_item:day %}
+                                    <div class="text-xs">
+                                        <strong>{{ lesson.discipline_name }}</strong><br>
+                                        {{ lesson.discipline_type }}<br>
+                                        <span class="{% if lesson.conflict == 'teacher' %}text-red-500{% endif %}">
+                                            {% for name in lesson.teacher_names %}
+                                            {{ name }} <br>
+                                            {% endfor %}
+                                    <form method="POST" action="{% url 'edit_real_schedule' group_id %}">
+                                    {% csrf_token %}
+                                    <select name="room_id" id="room_id" class="w-24 h-6">
+                                        {% for available_room in lesson.available_rooms %}
+                                            <option value="{{ available_room.id }}"
+                                                    {% if lesson.room|stringformat:"s" == available_room.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ available_room.name }}
+                                            </option>
+                                            {% endfor %}
+                                    </select>
+                                            <input type="hidden" name="page" value="{{ request.GET.page|default:'1' }}">
+                                            <input type="hidden" name="lesson_id" value="{{ lesson.id }}">
+                                            <button type="submit" name="action" value="post_room" class="w-6 h-6 bg-white border border-gray-300">
+                                                ОК</button></form>
+                                        {% for other_group_id, other_group_name in lesson.group_ids|custom_zip:lesson.group_names %}
+                                        {% if other_group_id != group_id %}
+                                            <a href="{% url 'edit_real_schedule' other_group_id %}" class="{% if lesson.conflict == 'group' %}
+                                            text-red-500 underline{% else %}text-blue-500 underline{% endif %}">{{ other_group_name }}</a> <br>
+                                        {% endif %}
+                                            {% endfor %}
+                                    {% for other_group_id, other_group_name in lesson.group_ids|custom_zip:lesson.group_names %}
+                                        {% if other_group_id == group_id %}
+                                        <form method="POST" action="{% url 'edit_real_schedule' group_id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="page" value="{{ request.GET.page|default:'1' }}">
+                                            <input type="hidden" name="lesson_id" value="{{ lesson.id }}">
+                                            <input type="hidden" name="discipline_id" value="{{ discipline_id }}">
+                                            <button type="submit" name="action" value="delete" class="w-6 h-6 bg-white border border-gray-300">
+                                                <span class="text-red-600 font-bold">✖</span>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                            {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            {% for limit in timetable_limitations|get_item:time_slot|get_item:day %}
+                                <span class="text-red-600 font-bold absolute top-0 right-0" title="Преподаватель ограничил это время">⛔</span>
+                                {% endfor %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'edu_resources/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Календарь занятий{% endblock %}
+
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <!-- Форма для выбора entity_id -->
+    {% if schedule_type == 'teacher' %}
+        <form method="get" action="{% url 'schedule_teacher_new' %}?entity_id={{ entity_id }}&page={{ request.GET.page|default:'1' }}" class="flex gap-4 items-center">
+    {% else %}
+        <form method="get" action="{% url 'schedule_group_new' %}?entity_id={{ entity_id }}&page={{ request.GET.page|default:'1' }}" class="flex gap-4 items-center">
+    {% endif %}
+        <label for="entity_id" class="text-sm font-medium"></label>
+        <input type="hidden" name="page" value="{{ request.GET.page|default:'1' }}">
+        <select name="entity_id" id="entity_id" class="p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 text-sm">
+            {% for entity in entities %}
+                <option value="{{ entity.id }}"
+                        {% if entity.id|stringformat:"s" == entity_id %}selected{% endif %}>
+                    {{ entity.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:ring focus:ring-blue-200">Показать расписание</button>
+    </form>
+
+    <!-- Стрелки навигации справа в одну строку -->
+    <div class="flex space-x-2">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&entity_id={{ entity_id }}"
+               class="bg-blue-500 text-white p-1 rounded-full hover:bg-blue-600 text-sm">
+                &#8592;
+            </a>
+        {% endif %}
+
+        <a href="?page={{ page_obj.next_page_number }}&entity_id={{ entity_id }}"
+           class="bg-blue-500 text-white p-1 rounded-full hover:bg-blue-600 text-sm">
+            &#8594;
+        </a>
+    </div>
+</div>
+
+
+
+<table class="table-auto border-collapse border border-gray-300 w-full text-sm mt-6">
+    <thead>
+        <tr>
+            <th class="border border-gray-300 px-4 py-2 text-left">Время</th>
+            {% for day in days %}
+                <th class="border border-gray-300 px-4 py-2 text-left">{{ day|capfirst }}<br>{{ dates|get_item:day }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for time_slot in time_slots %}
+            <tr class="hover:bg-gray-100">
+                <td class="border border-gray-300 px-4 py-2">{{ time_slot }}</td>
+                {% for day in days %}
+                    <td class="border border-gray-300 px-4 py-2">
+                        {% for lesson in timetable|get_item:time_slot|get_item:day %}
+                            {% if schedule_type == 'teacher' %}
+                                <div class="text-xs">
+                                    <strong>{{ lesson.discipline_name }}</strong><br>
+                                    {{ lesson.discipline_type }}<br>
+                                    {% for group_id, group_name in lesson.group_ids|custom_zip:lesson.group_names %}
+                                    <a href="{% url 'schedule_group_new' %}?entity_id={{ group_id }}&page={{ request.GET.page|default:'1' }}" class="text-blue-500 hover:underline">{{ group_name }}</a><br>
+                                {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-xs">
+                                    <strong>{{ lesson.discipline_name }}</strong><br>
+                                    {{ lesson.discipline_type }}<br>
+                                    <a href="{% url 'schedule_teacher_new' %}?entity_id={{ lesson.teacher_id }}&page={{ request.GET.page|default:'1' }}" class="text-blue-500 hover:underline">{{ lesson.teacher }}</a>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

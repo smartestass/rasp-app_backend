@@ -1,0 +1,58 @@
+{% extends 'edu_resources/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Календарь занятий{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <form method="get" action="{% url 'schedule_teacher' %}" class="flex gap-4 items-center">
+        <label for="entity_id" class="text-sm font-medium"></label>
+        <select name="entity_id" id="entity_id" class="p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 text-sm">
+            {% for entity in entities %}
+                <option value="{{ entity.id }}"
+                        {% if entity.id|stringformat:"s" == entity_id %}selected{% endif %}>
+                    {{ entity.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:ring focus:ring-blue-200">Показать расписание</button>
+    </form>
+</div>
+
+<table class="table-auto border-collapse border border-gray-300 w-full text-sm mt-6">
+    <thead>
+        <tr>
+            <th class="border border-gray-300 px-4 py-2 text-left">Время</th>
+            {% for day in days %}
+                <th class="border border-gray-300 px-4 py-2 text-left">{{ day|capfirst }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for time_slot in time_slots %}
+            <tr class="hover:bg-gray-100">
+                <td class="border border-gray-300 px-4 py-2">{{ time_slot }}</td>
+                {% for day in days %}
+                    <td class="border border-gray-300 px-4 py-2">
+                        {% for lesson in timetable|get_item:time_slot|get_item:day %}
+                            {% if schedule_type == 'teacher' %}
+                                <div class="text-xs">
+                                    <strong>{{ lesson.discipline_name }}</strong><br>
+                                    {{ lesson.discipline_type }}<br>
+                                    <a href="{% url 'schedule_group' lesson.group_id %}" class="text-blue-500 hover:underline">{{ lesson.group_name }}</a>
+                                </div>
+                            {% else %}
+                                <div class="text-xs">
+                                    <strong>{{ lesson.discipline_name }}</strong><br>
+                                    {{ lesson.discipline_type }}<br>
+                                    <a href="{% url 'schedule_teacher' %}?entity_id={{ lesson.teacher_id }}" class="text-blue-500 hover:underline">{{ lesson.teacher }}</a>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'edu_resources/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Расписание{% endblock %}
+
+{% block content %}
+    <p class="font-semibold text-center pb-6">{{ week.dates }}</p>
+<!-- Навигационные стрелки -->
+<div class="flex justify-end space-x-2 pd-2 pb-4">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&entity_id={{ entity_id }}"
+       class="bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 flex items-center">
+        ← Предыдущая
+    </a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&entity_id={{ entity_id }}"
+       class="bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 flex items-center">
+        Следующая →
+    </a>
+    {% endif %}
+</div>
+
+<!-- Расписание -->
+{% if lessons %}
+<div class="space-y-6">
+    {% for day, lessons in lessons.items %}
+    <div class="bg-gray-100 shadow-md rounded-lg p-4 mx-auto" style="max-width: 90%; width: 600px;">
+        <h3 class="bg-blue-100 text-blue-600 font-bold py-2 px-4 rounded mb-4">{{ day }} {{ lessons.0.russian_date }}</h3>
+        <ul class="space-y-4">
+            {% for lesson in lessons %}
+            <li class="flex items-start border-b pb-4">
+                <p class="text-sm font-medium text-gray-600 w-1/4">{{ lesson.timing }}</p>
+                <div class="w-3/4 pl-4">
+                    <p class="font-semibold">{{ lesson.discipline_name }}</p>
+                    <p class="text-sm italic text-gray-500">{{ lesson.discipline_type }}{% if lesson.room %}, {{ lesson.room_name}}{% endif %}</p>
+                {% if schedule_type == 'group' %}
+                <a href="{% url 'rasp_teacher' %}?entity_id={{ lesson.teacher_id }}&page={{ request.GET.page|default:'1' }}"
+                           class="text-blue-500 hover:underline text-sm">
+                            {{ lesson.teacher }}
+                        </a>
+                {% endif %}
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        {% for group_id, group_name in lesson.group_ids|custom_zip:lesson.group_names %}
+                        <a href="{% url 'rasp_group' %}?entity_id={{ group_id }}&page={{ request.GET.page|default:'1' }}"
+                           class="text-blue-500 hover:underline text-sm">
+                            {{ group_name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-center text-gray-600 pt-4">На этой неделе у вас нет пар или они ещё не добавлены.</p>
+{% endif %}
+{% endblock %}
