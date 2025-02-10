@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: app-rasp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 54Horror45!
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DJANGO_SETTINGS_MODULE=schedule_creator.settings.production
+      - DATABASE_URL=postgres://postgres:54Horror45!@db:5432/app-rasp
+    depends_on:
+      - db
+    networks:
+      - app-network
