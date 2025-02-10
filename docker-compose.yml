@@ -17,3 +17,5 @@ services:
       - DATABASE_URL=postgres://postgres:54Horror45!@db:5432/app-rasp
     depends_on:
       - db
+volumes:
+  postgres_data:
