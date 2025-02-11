@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Команда для запуска сервера
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "create_schedule.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "schedule_creator.wsgi:application"]
